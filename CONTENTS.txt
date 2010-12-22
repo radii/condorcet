@@ -1,0 +1,39 @@
+
+To run an election, open START-HERE and follow the instructions.
+
+CONTENTS
+========
+
+This folder contains a program for running Condorcet elections.
+The program works on Linux, Mac, or Windows.  The files are:
+
+    START-HERE.txt - open this file to run an election
+
+    election.py    - the source code of the election program
+    mac.app        - a Mac OS X application to run the program
+    windows.exe    - a Windows application to run the program
+
+    autorun.inf    - automatic CD startup script for Windows
+    library.zip    - Python library for the Windows application
+    msvcr71.dll    - DLL needed to run the Windows application
+    python24.dll   - DLL needed to run the Windows application
+
+    build          - source files to make mac.app and windows.exe
+
+
+MAKING CHANGES
+==============
+
+To make another CD, just copy everything to it.
+
+If you need to make changes to the election program, you can
+edit election.py.  The programs "mac.app" and "windows.exe"
+both launch election.py.
+
+You should never need to change anything else.  If you need
+to see how this CD was made, look in the "build" directory.
+
+Feel free to contact me if you have any problems.
+
+
+-- Ka-Ping Yee <ping@zesty.ca>, 2005-03-28

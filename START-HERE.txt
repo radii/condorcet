@@ -1,0 +1,52 @@
+# This election thingie works on Linux, Mac, or
+# Windows.  If you have trouble with it, feel free
+# to contact me: Ka-Ping Yee <ping@zesty.ca>.
+
+# For each elected position, follow these steps:
+#
+# 1. Open a fresh copy of this START-HERE file
+#    from the disk.  You'll enter ballots into
+#    this file right here.  There is an example
+#    after these instructions for you to edit.
+#
+# 2. In the example below, change "President" to
+#    the name of the position.
+#
+# 3. In the example below, change "Alice Bob None"
+#    to a list of the candidates.  Each name must
+#    be one word, with spaces between the names.
+#    You don't need to do anything special to
+#    handle votes for "None of the above"; just
+#    treat "None" like any other candidate.
+#
+# 4. Enter the ballots at the bottom of this file.
+#    Each ballot should be on a single line with a
+#    number for each candidate's ranking or a
+#    hyphen for no ranking.  For example, if there
+#    are 3 candidates, there should be 3 numbers
+#    or hyphens on each line, separated by spaces.
+#
+# 5. Save this file somewhere safe.
+#
+# 6. Linux: Run the command "election.py" with
+#           your filename as the first argument.
+#    Mac OS: Drag the icon for your saved file
+#            onto the "mac" icon on the CD.
+#    Windows: Drag the icon for your saved file
+#             onto the "windows" icon on the CD.
+#
+# 7. You should see the results appear in a new
+#    window.  The results are automatically saved
+#    to the folder where you saved your input.
+
+Position: President
+
+Candidates: Alice Bob None
+
+# Here are 5 example ballots; you can remove them.
+
+1 2 3
+- 1 -
+1 - 2
+1 1 -
+3 1 2
