@@ -10,7 +10,7 @@ hyphen to specify no ranking.  Lines starting with "#" are ignored."""
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 __date__ = '2005-03-28'
 
-import sys, os, time
+import sys, os, time, getopt
 
 def elect(candidates, prefer):
     """Determine the winner of an election using the Schulze method (sometimes
@@ -103,13 +103,39 @@ def read(file):
             ballots.append(ballot)
     return position, candidates, ballots
 
-def run(position, candidates, ballots):
-    """Run an election.  Write a report to a file in the current directory."""
-    n = len(candidates)
-    winners = elect(candidates, tally(candidates, ballots))
+def run_several(position, candidates, ballots, nwinners = 1):
+    """Run a multi-winner election by calling run() repeatedly,
+    removing the winner on each iteration.
+    """
+    date = '%04d-%02d-%02d' % time.localtime()[:3]
+
+    # Describe the main outcome.
+    title = 'Election Results for %s (%s)' % (position, date)
+    output = '\n# ' + title + '\n# ' + '='*len(title) + '\n# \n'
+    outputbody = ''
+    if nwinners > 1:
+	output += '# Filling %d positions\n#\n' % nwinners
+    for i in xrange(1, nwinners+1):
+	if nwinners > 1:
+	    posname = "%s %d" % (position, i)
+	else:
+	    posname = position
+	(header, body, winners) = run(posname, candidates, ballots)
+	output += '\n'
+	output += '\n'
+	output += '#\n'
+	output += '# Position %d\n' % i
+	output += '# %s\n' % ('-' * len('Position %d' % i))
+	output += '\n'.join(header) + '\n'
+	outputbody += '\n'
+	outputbody += '# Position %d\n' % i
+	outputbody += '\n'.join(body) + '\n'
+	for winner in winners:
+	    del candidates[winner]
+	    for ballot in ballots:
+		del ballot[winner]
 
     # Prepare the output file.
-    date = '%04d-%02d-%02d' % time.localtime()[:3]
     filename = date + '-'
     for letter in position:
         if letter.lower() in 'abcdefghijklmnopqrstuvwxyz0123456789':
@@ -118,72 +144,92 @@ def run(position, candidates, ballots):
             filename += '-'
     filename += '.txt'
     try:
-        output = open(filename, 'w')
+        out = open(filename, 'w')
+	print >>out, output
+	print >>out, outputbody
     except IOError:
         raise IOError('The results could not be saved.  Please make sure\n'
             'your input file is in a folder where you can write new files.')
+    return filename
 
-    # Describe the main outcome.
-    title = 'Election Results for %s (%s)' % (position, date)
-    print >>output, '\n# ' + title + '\n# ' + '='*len(title) + '\n# '
+def run(position, candidates, ballots):
+    """Run an election.  Write a report to a file in the current directory."""
+    n = len(candidates)
+    winners = elect(candidates, tally(candidates, ballots))
+
+    output = []
+
     if len(winners) > 1:
-        print >>output, '# There is a TIE between %d winners:' % len(winners)
+        output.append('# There is a TIE between %d winners:' % len(winners))
     for winner in winners:
-        print >>output, '#     Winner:', candidates[winner]
+        output.append('#     Winner: %s' % candidates[winner])
 
     # Describe how the winners defeated other candidates.
     prefer = tally(candidates, ballots)
     for i in winners:
-        print >>output, '\n# ' + candidates[i], 'defeats:'
+        output.append('')
+        output.append('# %s defeats:' % candidates[i])
         for j in range(n):
             pro, con = prefer[i, j], prefer[j, i]
             if pro > con:
-                print >>output, '#     %s by %d to %d (%d%% in favour)' % (
-                    candidates[j], pro, con, int(100*pro/(pro + con)))
+                output.append('#     %s by %d to %d (%d%% in favour)' % (
+                    candidates[j], pro, con, int(100*pro/(pro + con))))
 
     # Describe the other pairings between candidates.
-    print >>output
+    output.append('')
     for i in range(n):
         for j in range(n):
             if i != j and (i not in winners or i in winners and j in winners):
                 pro, con = prefer[i, j], prefer[j, i]
                 if pro == con and i > j:
-                    print >>output, '# %s is tied with %s (%d to %d)' % (
-                        candidates[i], candidates[j], pro, con)
+                    output.append('# %s is tied with %s (%d to %d)' % (
+                        candidates[i], candidates[j], pro, con))
                 elif pro > con:
-                    print >>output, ('# %s defeats %s by %d to %d '
+                    output.append(('# %s defeats %s by %d to %d '
                                      '(%d%% in favour)' % (
                         candidates[i], candidates[j], pro, con,
-                        int(100*pro/(pro + con))))
+                        int(100*pro/(pro + con)))))
 
     # Record the ballot data.
-    print >>output, '\n# The rest of this file is a copy of the input used.'
-    print >>output, '\nPosition:', position
-    print >>output, 'Candidates:', ' '.join(candidates)
-    print >>output, '\n# The following %d ballots were cast:' % len(ballots)
+    appendix = []
+    appendix.append('\n# The following is a copy of the input used.')
+    appendix.append('\nPosition: %s' % position)
+    appendix.append('Candidates: %s' % ' '.join(candidates))
+    appendix.append('\n# The following %d ballots were cast:' % len(ballots))
     for ballot in ballots:
-        print >>output, ' '.join(
-            [rank == 9999 and '-' or str(rank) for rank in ballot])
-    output.close()
-    return filename
+        appendix.append(' '.join(
+            [rank == 9999 and '-' or str(rank) for rank in ballot]))
+    return (output, appendix, winners)
 
-if len(sys.argv) == 2:
-    infile = sys.argv[1]
-    try:
-        position, candidates, ballots = read(open(infile))
-        os.chdir(os.path.dirname(infile) or '.')
-        outfile = run(position, candidates, ballots)
-        print 'Election results saved to: %s' % outfile
-        if sys.platform == 'win32':
-            os.startfile(outfile)
-        elif sys.platform == 'darwin':
-            os.system('open "%s"' % outfile)
-        else:
-            os.system('grep -i winner "%s"' % outfile)
-    except Exception, error:
-        print 'There was a problem running the election.'
-        print error
-        sys.exit(1)
-else:
-    print 'Please see the instructions in the START-HERE file.'
-    sys.exit(1)
+def main():
+    nwinners = 1
+    (opts, args) = getopt.getopt(sys.argv[1:], 'n:')
+    for i in opts:
+	if i[0] == '-n':
+	    nwinners = int(i[1])
+	else:
+	    sys.exit(1)
+    if len(args) == 1:
+	infile = args[0]
+	try:
+	    position, candidates, ballots = read(open(infile))
+	    os.chdir(os.path.dirname(infile) or '.')
+	    outfile = run_several(position, candidates, ballots, nwinners)
+	    print 'Election results saved to: %s' % outfile
+	    if sys.platform == 'win32':
+		os.startfile(outfile)
+	    elif sys.platform == 'darwin':
+		os.system('open "%s"' % outfile)
+	    else:
+		os.system('grep -i winner "%s"' % outfile)
+	except Exception, error:
+	    raise
+	    print 'There was a problem running the election.'
+	    print error
+	    sys.exit(1)
+    else:
+	print 'Please see the instructions in the START-HERE file.'
+	sys.exit(1)
+
+if __name__ == '__main__':
+    main()
